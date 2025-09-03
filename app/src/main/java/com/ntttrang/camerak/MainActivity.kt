@@ -28,6 +28,9 @@ import androidx.core.content.ContextCompat
 import com.ntttrang.camerak.ui.screen.CameraScreen
 import com.ntttrang.camerak.ui.theme.CameraKTheme
 import com.ntttrang.camerak.viewmodel.CameraViewModel
+import android.content.Intent
+import android.provider.MediaStore
+import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
 
@@ -42,13 +45,19 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val permissionsToRequest = arrayOf(
                     Manifest.permission.CAMERA,
-                    Manifest.permission.READ_MEDIA_IMAGES
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_VIDEO
                 )
                 var hasCameraPermission by remember {
                     mutableStateOf(
                         ContextCompat.checkSelfPermission(
                             context,
                             Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
                         ) == PackageManager.PERMISSION_GRANTED
                     )
                 }
@@ -56,13 +65,15 @@ class MainActivity : ComponentActivity() {
                 val launcher = rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.RequestMultiplePermissions(),
                     onResult = { permissionsMap ->
-                        // The camera permission is the only one that is required.
-                        hasCameraPermission = permissionsMap[Manifest.permission.CAMERA] ?: hasCameraPermission
+                        // Check if all required permissions are granted
+                        hasCameraPermission = permissionsMap[Manifest.permission.CAMERA] == true &&
+                                permissionsMap[Manifest.permission.RECORD_AUDIO] == true
                     }
                 )
 
                 if (hasCameraPermission) {
-                    CameraScreen(viewModel)
+                    val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
+                    CameraScreen(viewModel, lastPhotoUri = lastPhotoUri)
                 } else {
                     PermissionRationaleScreen(
                         onConfirm = { launcher.launch(permissionsToRequest) }
@@ -70,6 +81,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.onAppBackgrounded()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.onAppForegrounded()
     }
 }
 
@@ -98,7 +119,7 @@ fun PermissionRationaleDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Permissions Required") },
-        text = { Text("To take pictures, this app needs access to your camera. To also see the latest photo from your gallery as a thumbnail, please grant gallery access.") },
+        text = { Text("To take pictures and record videos, this app needs access to your camera and microphone. To also see the latest photos and videos from your gallery as thumbnails, please grant gallery access.") },
         confirmButton = {
             Button(onClick = onConfirm) {
                 Text("Continue")
