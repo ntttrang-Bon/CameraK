@@ -65,6 +65,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.layout.heightIn
 
 private fun formatRecordingTime(seconds: Long): String {
     val minutes = seconds / 60
@@ -159,21 +160,25 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
         }
 
         // Aspect ratio selector at the top
-        AspectRatioSelector(
-            viewModel = viewModel,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-                .zIndex(1f)
-        )
+        if (!isRecording) {
+            AspectRatioSelector(
+                viewModel = viewModel,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 16.dp, start = 8.dp, end = 8.dp)
+                    .zIndex(1f)
+            )
+        }
 
         // Recording indicator and timer
         if (isRecording) {
             val recordingTime by viewModel.recordingTime.collectAsState()
-            Column(
+            Row(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
+                    .align(Alignment.TopCenter)
+                    .padding(top = 16.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
                     .clickable(
                         enabled = isRatioSelectorExpanded,
                         onClick = { viewModel.collapseRatioSelector() }
@@ -181,16 +186,13 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
             ) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .background(Color.Red, CircleShape)
                 )
-                Spacer(modifier = Modifier.padding(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = formatRecordingTime(recordingTime),
-                    color = Color.White,
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                    color = Color.White
                 )
             }
         }

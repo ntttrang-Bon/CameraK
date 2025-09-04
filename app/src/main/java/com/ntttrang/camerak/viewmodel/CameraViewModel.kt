@@ -121,6 +121,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
 
     private var lastCaptureDisplayRotation: Int = 0
     private var recordingStartTime: Long = 0
+    private var lastRecordingDisplayRotation: Int = 0
 
     init {
         findCameraIds()
@@ -147,13 +148,14 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun startRecording() {
+    fun startRecording(displayRotation: Int) {
         if (_cameraMode.value != CameraMode.VIDEO || _isRecording.value) {
             return
         }
 
         try {
-            setupMediaRecorder()
+            lastRecordingDisplayRotation = displayRotation
+            setupMediaRecorder(displayRotation)
             createRecordingSession()
             _isRecording.value = true
             recordingStartTime = System.currentTimeMillis()
@@ -202,7 +204,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    private fun setupMediaRecorder() {
+    private fun setupMediaRecorder(displayRotation: Int) {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val videoFileName = "VID_$timeStamp.mp4"
         
@@ -231,6 +233,26 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
             setVideoEncodingBitRate(10000000) // 10 Mbps
             setVideoFrameRate(30)
             setVideoSize(1920, 1080)
+            // Compute and set orientation hint so the recorded video matches device orientation
+            val cameraId = currentCameraId
+            if (cameraId != null) {
+                val characteristics = cameraManager.getCameraCharacteristics(cameraId)
+                val sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 0
+                val displayRotationDegrees = when (displayRotation) {
+                    Surface.ROTATION_0 -> 0
+                    Surface.ROTATION_90 -> 90
+                    Surface.ROTATION_180 -> 180
+                    Surface.ROTATION_270 -> 270
+                    else -> 0
+                }
+                val orientationHint = (sensorOrientation - displayRotationDegrees + 360) % 360
+                try {
+                    setOrientationHint(orientationHint)
+                    Log.d("CameraViewModel", "Video orientationHint set to $orientationHint (sensor=$sensorOrientation, display=$displayRotationDegrees)")
+                } catch (e: Exception) {
+                    Log.e("CameraViewModel", "Failed to set orientation hint", e)
+                }
+            }
             setOutputFile(resolver.openFileDescriptor(videoUri!!, "w")?.fileDescriptor)
             prepare()
         }
@@ -990,7 +1012,7 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                 if (_isRecording.value) {
                     stopRecording()
                 } else {
-                    startRecording()
+                    startRecording(displayRotation)
                 }
             }
         }
