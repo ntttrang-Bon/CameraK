@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.request.videoFrameMillis
@@ -204,10 +205,6 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
-                    .clickable(
-                        enabled = false,
-                        onClick = { /* Prevent click outside from collapsing */ }
-                    )
             ) {
                 Icon(
                     imageVector = if (flashEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
@@ -223,11 +220,7 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(paddingValues)
-                .padding(16.dp)
-                .clickable(
-                    enabled = isRatioSelectorExpanded,
-                    onClick = { viewModel.collapseRatioSelector() }
-                ),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Mode selector above the capture button
@@ -236,20 +229,12 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
                 onModeSelected = { viewModel.setCameraMode(it) },
                 modifier = Modifier
                     .padding(bottom = 16.dp)
-                    .clickable(
-                        enabled = false,
-                        onClick = { /* Prevent click outside from collapsing */ }
-                    )
             )
             
             // Bottom row with thumbnail, capture button, and camera switch
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        enabled = isRatioSelectorExpanded,
-                        onClick = { viewModel.collapseRatioSelector() }
-                    ),
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -271,10 +256,6 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
                     enabled = cameraReady,
                     modifier = Modifier
                         .size(72.dp)
-                        .clickable(
-                            enabled = false,
-                            onClick = { /* Prevent click outside from collapsing */ }
-                        )
                 ) {
                     Box(
                         modifier = Modifier
@@ -304,11 +285,7 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
                 }
                 
                 IconButton(
-                    onClick = { viewModel.switchCamera() },
-                    modifier = Modifier.clickable(
-                        enabled = false,
-                        onClick = { /* Prevent click outside from collapsing */ }
-                    )
+                    onClick = { viewModel.switchCamera() }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Cameraswitch,
@@ -343,11 +320,6 @@ fun ModeSelector(
                         RoundedCornerShape(20.dp)
                     )
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable(
-                        enabled = false,
-                        onClick = { /* Prevent click outside from collapsing */ }
-                    ),
-                contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "${mode.icon} ${mode.displayName}",
@@ -436,60 +408,61 @@ fun AspectRatioSelector(
         TextButton(
             onClick = { viewModel.toggleRatioSelector() },
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-                .clickable(
-                    enabled = false,
-                    onClick = { /* Prevent click outside from collapsing */ }
+                .background(
+                    Color.Black.copy(alpha = 0.6f),
+                    RoundedCornerShape(if (aspectRatio == AspectRatio.FULL) 20.dp else 12.dp)
+                )
+                .padding(
+                    horizontal = if (aspectRatio == AspectRatio.FULL) 8.dp else 10.dp,
+                    vertical = if (aspectRatio == AspectRatio.FULL) 4.dp else 6.dp
                 )
         ) {
             Text(
                 text = aspectRatio.displayName,
-                color = Color.White
+                color = Color.White,
+                fontSize = 13.sp
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(2.dp))
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = if (isExpanded) "Collapse" else "Expand",
                 tint = Color.White,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(14.dp)
             )
         }
         
         // Expanded ratio options
         if (isExpanded) {
-            Spacer(modifier = Modifier.padding(8.dp))
+            Spacer(modifier = Modifier.padding(6.dp))
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier
-                    .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
-                    .padding(12.dp)
-                    .clickable(
-                        enabled = false,
-                        onClick = { /* Prevent click outside from collapsing */ }
-                    )
+                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
             ) {
                 items(AspectRatio.values()) { ratio ->
                     val isSelected = ratio == aspectRatio
-                    TextButton(
-                        onClick = { 
-                            viewModel.setAspectRatio(ratio)
-                            viewModel.collapseRatioSelector()
-                        },
+                    Box(
                         modifier = Modifier
                             .background(
                                 if (isSelected) Color.White else Color.Transparent,
-                                RoundedCornerShape(12.dp)
+                                RoundedCornerShape(10.dp)
                             )
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                            .clickable(
-                                enabled = false,
-                                onClick = { /* Prevent click outside from collapsing */ }
+                            .border(
+                                width = 1.dp,
+                                color = if (isSelected) Color.Transparent else Color.White.copy(alpha = 0.6f),
+                                shape = RoundedCornerShape(8.dp)
                             )
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .clickable {
+                                viewModel.setAspectRatio(ratio)
+                                viewModel.collapseRatioSelector()
+                            }
                     ) {
                         Text(
                             text = ratio.displayName,
-                            color = if (isSelected) Color.Black else Color.White
+                            color = if (isSelected) Color.Black else Color.White,
+                            fontSize = 12.sp
                         )
                     }
                 }
