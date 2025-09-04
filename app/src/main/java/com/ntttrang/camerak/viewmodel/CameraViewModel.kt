@@ -820,9 +820,9 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
 
                     // Set flash mode
                     if (_flashEnabled.value) {
-                        Log.d("CameraViewModel", "Enabling flash/torch")
-                        builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-                        builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
+                        Log.d("CameraViewModel", "Enabling flash (torch off)")
+                        builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                        builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
                     } else {
                         Log.d("CameraViewModel", "Disabling flash/torch")
                         builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
@@ -982,8 +982,8 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                     if (_flashSupported.value && _cameraMode.value == CameraMode.PHOTO) {
                         if (_flashEnabled.value) {
                             Log.d("CameraViewModel", "Setting flash ON in preview session")
-                            previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-                            previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
+                            previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                            previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
                         } else {
                             Log.d("CameraViewModel", "Setting flash OFF in preview session")
                             previewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
@@ -1109,9 +1109,9 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
                 
                 // Restore flash state based on current setting
                 if (_flashSupported.value && _flashEnabled.value) {
-                    Log.d("CameraViewModel", "Restoring flash ON in preview")
-                    builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH)
-                    builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
+                    Log.d("CameraViewModel", "Restoring flash ON in preview (torch off)")
+                    builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                    builder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
                 } else {
                     Log.d("CameraViewModel", "Restoring flash OFF in preview")
                     builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
