@@ -26,8 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.ntttrang.camerak.ui.screen.CameraScreen
+import com.ntttrang.camerak.ui.screen.SettingsScreen
 import com.ntttrang.camerak.ui.theme.CameraKTheme
 import com.ntttrang.camerak.viewmodel.CameraViewModel
+import com.ntttrang.camerak.viewmodel.SettingsViewModel
 import android.content.Intent
 import android.provider.MediaStore
 import androidx.compose.runtime.collectAsState
@@ -71,9 +73,23 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
+                var showSettings by remember { mutableStateOf(false) }
+                val settingsViewModel: SettingsViewModel by viewModels()
+
                 if (hasCameraPermission) {
-                    val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
-                    CameraScreen(viewModel, lastPhotoUri = lastPhotoUri)
+                    if (showSettings) {
+                        SettingsScreen(
+                            viewModel = settingsViewModel,
+                            onBackClick = { showSettings = false }
+                        )
+                    } else {
+                        val lastPhotoUri by viewModel.lastPhotoUri.collectAsState()
+                        CameraScreen(
+                            viewModel, 
+                            lastPhotoUri = lastPhotoUri,
+                            onSettingsClick = { showSettings = true }
+                        )
+                    }
                 } else {
                     PermissionRationaleScreen(
                         onConfirm = { launcher.launch(permissionsToRequest) }

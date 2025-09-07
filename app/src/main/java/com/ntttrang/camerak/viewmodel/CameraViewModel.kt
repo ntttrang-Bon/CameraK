@@ -47,6 +47,7 @@ import android.hardware.camera2.TotalCaptureResult
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
 import android.content.Intent
+import com.ntttrang.camerak.data.PreferencesRepository
 
 enum class AspectRatio(val displayName: String) {
     FULL("Full"),
@@ -123,6 +124,8 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     private var recordingStartTime: Long = 0
     private var lastRecordingDisplayRotation: Int = 0
 
+    private val preferencesRepository = PreferencesRepository(getApplication<Application>().applicationContext)
+
     init {
         findCameraIds()
         // Try to find a camera with flash first, otherwise use back camera
@@ -132,11 +135,31 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
         loadLatestPhotoFromGallery()
         loadLatestVideoFromGallery()
         loadLatestGalleryMedia()
+        // Load persisted settings if enabled
+        try {
+            if (preferencesRepository.rememberCameraMode.value) {
+                preferencesRepository.getLastCameraMode()?.let { saved ->
+                    val parsed = try { CameraMode.valueOf(saved) } catch (e: Exception) { null }
+                    parsed?.let { _cameraMode.value = it }
+                }
+            }
+            if (preferencesRepository.rememberAspectRatio.value) {
+                preferencesRepository.getLastAspectRatio()?.let { saved ->
+                    val parsed = try { AspectRatio.valueOf(saved) } catch (e: Exception) { null }
+                    parsed?.let { _aspectRatio.value = it }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("CameraViewModel", "Failed loading preferences", e)
+        }
     }
 
     fun setCameraMode(mode: CameraMode) {
         if (_cameraMode.value != mode) {
             _cameraMode.value = mode
+            if (preferencesRepository.rememberCameraMode.value) {
+                preferencesRepository.setLastCameraMode(mode.name)
+            }
             // Stop recording if switching from video mode
             if (_isRecording.value) {
                 stopRecording()
@@ -719,6 +742,9 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     fun cycleAspectRatio() {
         val nextIndex = (_aspectRatio.value.ordinal + 1) % AspectRatio.values().size
         _aspectRatio.value = AspectRatio.values()[nextIndex]
+        if (preferencesRepository.rememberAspectRatio.value) {
+            preferencesRepository.setLastAspectRatio(_aspectRatio.value.name)
+        }
         // Reconfigure camera with new ratio
         if (cameraDevice != null) {
             createCameraPreviewSession()
@@ -728,6 +754,9 @@ class CameraViewModel(application: Application) : AndroidViewModel(application) 
     fun setAspectRatio(ratio: AspectRatio) {
         if (_aspectRatio.value != ratio) {
             _aspectRatio.value = ratio
+            if (preferencesRepository.rememberAspectRatio.value) {
+                preferencesRepository.setLastAspectRatio(ratio.name)
+            }
             // Reconfigure camera with new ratio
             if (cameraDevice != null) {
                 createCameraPreviewSession()

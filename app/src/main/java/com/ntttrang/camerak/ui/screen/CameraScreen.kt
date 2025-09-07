@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,6 +67,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.heightIn
+import coil.request.videoFramePercent
 
 private fun formatRecordingTime(seconds: Long): String {
     val minutes = seconds / 60
@@ -74,7 +76,7 @@ private fun formatRecordingTime(seconds: Long): String {
 }
 
 @Composable
-fun CameraScreen(viewModel: CameraViewModel, lastPhotoUri: Uri?) {
+fun CameraScreen(viewModel: CameraViewModel, lastPhotoUri: Uri?, onSettingsClick: () -> Unit = {}) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { 
         // Refresh thumbnails when returning from gallery
@@ -97,13 +99,14 @@ fun CameraScreen(viewModel: CameraViewModel, lastPhotoUri: Uri?) {
             paddingValues = innerPadding,
             onThumbnailClick = {
                 viewModel.openLatestMedia()
-            }
+            },
+            onSettingsClick = onSettingsClick
         )
     }
 }
 
 @Composable
-fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onThumbnailClick: () -> Unit = {}) {
+fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onThumbnailClick: () -> Unit = {}, onSettingsClick: () -> Unit = {}) {
     val aspectRatio by viewModel.aspectRatio.collectAsState()
     val cameraMode by viewModel.cameraMode.collectAsState()
     val isRecording by viewModel.isRecording.collectAsState()
@@ -197,22 +200,38 @@ fun CameraPreview(viewModel: CameraViewModel, paddingValues: PaddingValues, onTh
             }
         }
         
-        // Flash button in top-right corner (only show in photo mode)
-        if (cameraMode == CameraMode.PHOTO) {
-            val flashEnabled by viewModel.flashEnabled.collectAsState()
-            val flashSupported by viewModel.flashSupported.collectAsState()
-            
+        // Top-right controls (flash button and settings button)
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Settings button
             IconButton(
-                onClick = { viewModel.toggleFlash() },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
+                onClick = onSettingsClick
             ) {
                 Icon(
-                    imageVector = if (flashEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                    contentDescription = if (flashEnabled) "Flash On" else "Flash Off",
-                    tint = if (flashEnabled) Color.Yellow else Color.White
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.White
                 )
+            }
+            
+            // Flash button (only show in photo mode)
+            if (cameraMode == CameraMode.PHOTO) {
+                val flashEnabled by viewModel.flashEnabled.collectAsState()
+                val flashSupported by viewModel.flashSupported.collectAsState()
+                
+                IconButton(
+                    onClick = { viewModel.toggleFlash() }
+                ) {
+                    Icon(
+                        imageVector = if (flashEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
+                        contentDescription = if (flashEnabled) "Flash On" else "Flash Off",
+                        tint = if (flashEnabled) Color.Yellow else Color.White
+                    )
+                }
             }
         }
 
@@ -348,8 +367,7 @@ fun Thumbnail(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(latestGalleryMedia)
                 // If the URI is a video, this tells Coil to extract a frame for the thumbnail
-                .videoFrameMillis(0)
-                .crossfade(true)
+                .videoFrameMillis(100)
                 .build(),
             contentDescription = "Latest media from gallery",
             contentScale = ContentScale.Crop,
